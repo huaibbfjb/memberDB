@@ -4,13 +4,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>用户管理系统</title>
-    <!-- Bootstrap core CSS -->
     <link href="static/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom styles for this template -->
-    <!-- <link href="theme.css" rel="stylesheet"> -->
     <script type="text/javascript" src="static/js/jquery-2.0.0.min.js"></script>
     <script type="text/javascript" src="static/js/bootstrap.min.js"></script>
-    <script type="text/javascript">
+    <script src="https://cdn.bootcss.com/sweetalert/1.1.3/sweetalert.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://www.huangwx.cn/css/sweetalert.css">
+    <script type="text/javascript" src="https://www.huangwx.cn/js/sweetalert-dev.js"></script>
+    <script>
+        var currentPage = 1;
+
         $(function () {
             $.ajax({
                 url: "http://localhost:8083/user.do",
@@ -18,61 +20,161 @@
                 type: "GET",
                 dataType: "text",
                 success: function (data) {
-                    //data代表服务器回传的数据
-                    var jsonObj = JSON.parse(data);
-                    var buttons = "<td>\n" +
-                        "<button type=\"button\" class=\"upbtn btn btn-sm btn-info\">修改</button>\n" +
-                        "<button type=\"button\" class=\"delbtn btn btn-danger btn-sm\">删除</button>\n" +
-                        "</td>";
-                    $("#totalPageCount").html("共" + jsonObj.pageTotal + "页");
-                    for (var i = 1; i <= jsonObj.pageTotal; i++) {//追加页数（1,2,3.....）
-                        $("#pageButton").append('<a class="btn btn-default" href="#" id="' + i + '">' + i + '</a>\n');
-                    }
-                    $("#pageButton > a").each(function () {
-                        $(this).bind('click', function () {
-                            var id = $(this).attr("id")
-                            $.ajax({
-                                url: "http://localhost:8083/user.do",
-                                data: {action: "queryPage", pageNo: id},
-                                type: "GET",
-                                dataType: "text",
-                                success: function (data) {
-                                    var jsonObj = JSON.parse(data);
-                                    $("#tbdoy1 > tr").each(function () {
-                                        $(this).remove();
-                                    });
-                                    var buttons = "<td>\n" +
-                                        "<button type=\"button\" class=\"upbtn btn btn-sm btn-info\">修改</button>\n" +
-                                        "<button type=\"button\" class=\"delbtn btn btn-danger btn-sm\">删除</button>\n" +
-                                        "</td>";
-                                    for (var i = 0; i < jsonObj.items.length; i++) {
-                                        var trNode = $("<tr></tr>");
-                                        trNode.append("<td>" + jsonObj.items[i].id + "</td>");
-                                        trNode.append("<td>" + jsonObj.items[i].username + "</td>");
-                                        trNode.append("<td>" + jsonObj.items[i].password + "</td>");
-                                        trNode.append("<td>" + jsonObj.items[i].type + "</td>");
-                                        trNode.append("<td>" + jsonObj.items[i].status + "</td>");
-                                        trNode.append(buttons);
-                                        $("#tbdoy1").append(trNode);//追加每行的用户信息
-                                    }
-                                }
-                            });
-                        });
-                    });
-                    for (var i = 0; i < jsonObj.items.length; i++) {
-                        var trNode = $("<tr></tr>");
-                        trNode.append("<td>" + jsonObj.items[i].id + "</td>");
-                        trNode.append("<td>" + jsonObj.items[i].username + "</td>");
-                        trNode.append("<td>" + jsonObj.items[i].password + "</td>");
-                        trNode.append("<td>" + jsonObj.items[i].type + "</td>");
-                        trNode.append("<td>" + jsonObj.items[i].status + "</td>");
-                        trNode.append(buttons);
-                        $("#tbdoy1").append(trNode);//追加每行的用户信息
-                    }
+                    datainit(data);
                 }
             });
         });
+
+        function changepage(i) {
+            currentPage = i;
+            $.ajax({
+                url: "http://localhost:8083/user.do",
+                data: {action: "queryPage", pageNo: i},
+                type: "GET",
+                dataType: "text",
+                success: function (data) {
+                    var jsonObj = JSON.parse(data);
+                    if (currentPage>jsonObj.pageTotal){
+                        currentPage--;
+                        changepage(currentPage);
+                    }
+                    datainit(data);
+                }
+            })
+        };
+
+        function datainit(data) {
+            var index = 1;
+            var jsonObj = JSON.parse(data);
+            var buttons = "<td>" +
+                "<button type=\"button\" class=\"upbtn btn btn-sm btn-info\" data-toggle=\"modal\" data-target=\"#update\">修改</button>" +
+                "<button type=\"button\" class=\"delbtn btn btn-danger btn-sm\">删除</button>" +
+                "</td>";
+            var nextbutton="<button type='button' class='btn btn-default' id='next'>>下一页</button> ";
+            var lastbutton="<button type='button' class='btn btn-default' id='last'>上一页<</button> ";
+            var firstbutton="<>"
+            $("#tbody1").empty();
+            $("#pagebutton").empty();
+            $("#pagebutton").html("<b id=\"totalPageCount\">共页</b>\n")
+            $("#totalPageCount").html("共" + jsonObj.pageTotal + "页");
+            $("#pagebutton").append('<a class="btn btn-default" onclick="changepage(1)">首页\<<</a>');
+
+            if (currentPage!=1) {
+                $("#pagebutton").append(lastbutton);
+                $("#last").on('click',function () {
+                    changepage(currentPage - 1);
+                })
+            }
+
+            if(currentPage<=6) {
+                index = 1;
+            }else if(currentPage>6&&currentPage<(jsonObj.pageTotal-4)) {
+                index = currentPage - 5;
+            }else if(currentPage>=jsonObj.pageTotal-4)
+            {
+                index = jsonObj.pageTotal - 9;
+            }
+                for (var i = index; i <= index+9; i++) {
+                if (i == currentPage) {
+                    $("#pagebutton").append('<a class="btn btn-primary" onclick="changepage(' + i + ')">' + i + '</a>');
+                } else {
+                    $("#pagebutton").append('<a class="btn btn-default" onclick="changepage(' + i + ')">' + i + '</a>');
+                }
+            }
+
+            if(currentPage!=jsonObj.pageTotal) {
+                $("#pagebutton").append(nextbutton);
+                $("#next").on('click',function () {
+                    changepage(currentPage + 1);
+                })
+
+            }
+            $("#pagebutton").append('<a class="btn btn-default" onclick="changepage(' + jsonObj.pageTotal + ')">\>>最后一页</a>');
+
+            for (var i = 0; i < jsonObj.items.length; i++) {
+                var trNode = $("<tr></tr>");
+                trNode.append("<td>" + jsonObj.items[i].id + "</td>");
+                trNode.append("<td>" + jsonObj.items[i].username + "</td>");
+                trNode.append("<td>" + jsonObj.items[i].password + "</td>");
+                var imgpath = jsonObj.items[i].image;
+                imgpath = imgpath.substring(2);
+                imgpath = imgpath.replace("\\", "/");
+                imgpath = "http://localhost:8083" + imgpath;
+                trNode.append("<td><img width='60px' height='80px' src='" + imgpath + "'/></td>");
+                if (jsonObj.items[i].type == 0) {
+                    jsonObj.items[i].type = "普通用户";
+                } else if (jsonObj.items[i].type == 1) {
+                    jsonObj.items[i].type = "VIP";
+                } else if (jsonObj.items[i].type == 2) {
+                    jsonObj.items[i].type = "管理员";
+                }
+                trNode.append("<td>" + jsonObj.items[i].type + "</td>");
+                if (jsonObj.items[i].status == 0) {
+                    jsonObj.items[i].status = "禁用";
+                } else if (jsonObj.items[i].status == 1) {
+                    jsonObj.items[i].status = "启用";
+                }
+                trNode.append("<td>" + jsonObj.items[i].status + "</td>");
+                trNode.append(buttons);
+                $("#tbody1").append(trNode);
+            }
+
+            $(".delbtn").on("click", function () {
+                var id = $($(this).parents("tr").children("td")[0]).html().trim();
+                //询问是否确认删除
+                sweetAlert({
+                    title: "是否确认删除?",
+                    text: "",
+                    type: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#DD6B55",
+                    confirmButtonText: "删除",
+                    closeOnConfirm: false
+                }, function () {
+                    $.ajax({
+                        url: "http://localhost:8083/user.do",
+                        data: {action: "delete", userId: id},
+                        type: "GET",
+                        dataType: "text",
+                        success: function (data) {
+                            alert(data)
+                            if (data > 0) {
+                                swal("删除成功!", "", "success");
+                                changepage(i);
+                            } else {
+                                swal("删除失败!", "", "error");
+                            }
+                        }
+                    });
+                });
+            });
+            $(".upbtn").on("click",function () {
+                var id = $($(this).parents("tr").children("td")[0]).html().trim();
+                var username = $($(this).parents("tr").children("td")[1]).html().trim();
+                var password = $($(this).parents("tr").children("td")[2]).html().trim();
+                var image = $($(this).parents("tr").children("td")[3]).html().trim();
+                var type = $($(this).parents("tr").children("td")[4]).html().trim();
+                var status = $($(this).parents("tr").children("td")[5]).html().trim();
+                $("#updateid").val(id);
+                $("#updateusername").val(username);
+                $("#updatepassword").val(password);
+                // $("#updateimage").val(image);
+                if(type=="普通用户"){
+                    $("#type").val(0);
+                }else if(type=="VIP"){
+                    $("#type").val(1);
+                }else if(type=="管理员"){
+                    $("#type").val(2);
+                }
+                if(status=="禁用"){
+                    $("#status").val(0);
+                }else if(status=="启用"){
+                    $("#status").val(1);
+                }
+            })
+        }
     </script>
+
 </head>
 <body>
 <div class="container">
@@ -99,13 +201,15 @@
                         <li>
                             <a href="#">分割线</a>
                         </li>
+                        <li>
+                            <a id="logout" href="http://localhost:8083/user.do?action=logout">注销</a>
+                        </li>
                     </ul>
                 </li>
             </ul>
             <div class="row clearfix">
                 <div class="col-md-2 column">
                     <div class="list-group">
-
                         <a href="#" class="list-group-item ">项目管理</a>
                         <a href="#" class="list-group-item active">用户管理</a>
                         <a href="#" class="list-group-item ">权限管理</a>
@@ -134,14 +238,160 @@
                     </div>
                     <div class="row clearfix">
                         <div class="col-md-12 column">
-                            <button id="addbtn" type="button" class="btn btn-primary btn-default btn-block">
+                            <button id="addbtn" type="button" class="btn btn-primary btn-default btn-block"
+                                    data-toggle="modal" data-target="#myModal">
 										<span class="glyphicon glyphicon-plus-sign">
 											添加用户
 										</span>
                                 <span style="display: none" id="delsp">
-
 										</span>
                             </button>
+                            <div class="modal fade" id="myModal" tabindex="-1" role="dialog"
+                                 aria-labelledby="myModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                                &times;
+                                            </button>
+                                            <h4 class="modal-title" id="myModalLabel">添加用户</h4>
+                                        </div>
+                                        <form enctype="multipart/form-data" id="insert">
+                                            <div class="modal-body">
+                                                <label for="username">用户名:</label>
+                                                <input type="text" class="form-control" id="username" name="username"><br/>
+                                                <label for="password">密码:</label>
+                                                <input type="text" class="form-control" id="password" name="password"><br/>
+                                                <label for="image">上传头像:</label>
+                                                <input type="file" id="image" name="image"><br/>
+                                                <label for="image">类型</label>
+                                                <div class="form-group">
+                                                    <select class="form-control" name="type">
+                                                        <option  name="type" class="type" value="0">普通用户
+                                                        <option  name="type" class="type" value="1">VIP
+                                                        <option  name="type" class="type" value="2">管理员
+                                                    </select>
+                                                </div>
+                                                <label for="image">状态</label>
+                                                <div class="form-group">
+                                                    <select class="form-control" name="status">
+                                                        <option  name="status" class="status" value="1">启用
+                                                        <option  name="status" class="status" value="0">禁用
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </form>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-default" data-dismiss="modal">关闭
+                                            </button>
+                                            <button type="button" class="btn btn-primary" id="insertbutton">提交
+                                            </button>
+                                            <script>
+                                                $("#insertbutton").click(function () {
+                                                    var formData = new FormData(document.getElementById("insert"));
+                                                    $.ajax({
+                                                        url: "/user.do?action=insert",
+                                                        data: formData,
+                                                        processData: false,
+                                                        contentType: false,
+                                                        type: "POST",
+                                                        dataType: "text",
+                                                        success: function (data) {
+                                                            //alert(data);
+                                                            if("1"==data){
+                                                                swal("新增成功!", "", "success");
+                                                            }else {
+                                                                swal("新增失败!", "", "error");
+                                                            }
+                                                            $("#myModal").modal("hide");
+                                                            changepage(currentPage);
+                                                        }
+                                                    });
+
+                                                });
+                                                $('#myModal').on('hidden.bs.modal', function (){
+                                                    document.getElementById("insert").reset();
+                                                });
+                                            </script>
+                                        </div>
+                                    </div><!-- /.modal-content -->
+                                </div><!-- /.modal -->
+                            </div>
+                            <div class="modal fade" id="update" tabindex="-1" role="dialog"
+                                 aria-labelledby="myModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                                &times;
+                                            </button>
+                                            <h4 class="modal-title" id="myModalupdate">修改用户</h4>
+                                        </div>
+                                        <form enctype="multipart/form-data" id="updateform">
+                                            <div class="modal-body">
+                                                <input type="hidden" name="id" id="updateid" value="">
+                                                <label for="username">用户名:</label>
+                                                <input type="text" class="form-control" id="updateusername" name="username"><br/>
+                                                <label for="password">密码:</label>
+                                                <input type="text" class="form-control" id="updatepassword" name="password"><br/>
+                                                <label for="image">上传头像:</label>
+                                                <input type="file" id="updateimage" name="image"><br/>
+                                                <label for="image">类型</label>
+                                                <div class="form-group">
+                                                    <select class="form-control" name="type" id="type">
+                                                        <option  name="type" class="type" value="0">普通用户
+                                                        <option  name="type" class="type" value="1">VIP
+                                                        <option  name="type" class="type" value="2">管理员
+                                                    </select>
+                                                </div>
+                                                <label for="image">状态</label>
+                                                <div class="form-group">
+                                                    <select class="form-control" name="status" id="status">
+                                                        <option  name="status" class="status" value="1">启用
+                                                        <option  name="status" class="status" value="0">禁用
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </form>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-default" data-dismiss="modal">关闭
+                                            </button>
+                                            <button type="button" class="btn btn-primary" id="updatebutton">提交
+                                            </button>
+                                            <script>
+                                                $("#updatebutton").click(function () {
+                                                    var formData = new FormData(document.getElementById("updateform"));
+                                                    $.ajax({
+                                                        url: "/user.do?action=update",
+                                                        data: formData,
+                                                        processData: false,
+                                                        contentType: false,
+                                                        type: "POST",
+                                                        dataType: "text",
+                                                        success: function (data) {
+                                                            //alert(data);
+                                                            if("1"==data){
+                                                                swal("修改成功!", "", "success");
+                                                            }else {
+                                                                swal("修改失败!", "", "error");
+                                                            }
+                                                            $("#update").modal("hide");
+                                                            changepage(currentPage);
+
+                                                        }
+                                                    });
+
+                                                });
+                                                $('#update').on('hidden.bs.modal', function (){
+                                                    document.getElementById("insert").reset();
+                                                });
+                                            </script>
+                                        </div>
+                                    </div><!-- /.modal-content -->
+                                </div><!-- /.modal -->
+                            </div>
+
+
                             <table class="table table-hover">
                                 <thead>
                                 <tr>
@@ -152,8 +402,12 @@
                                         用户名
                                     </th>
                                     <th>
+                                        密码
+                                    </th>
+                                    <th>
                                         头像
                                     </th>
+
                                     <th>
                                         类型
                                     </th>
@@ -165,15 +419,14 @@
                                     </th>
                                 </tr>
                                 </thead>
-                                <tbody id="tbdoy1">
+                                <tbody id="tbody1">
 
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-                <div align="center" id="pageButton">
-                    <b id="totalPageCount">共页</b>
+                <div align="center" id="pagebutton">
                 </div>
             </div>
         </div>

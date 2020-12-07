@@ -16,14 +16,16 @@ public abstract class BaseServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         //防止中文乱码的金句
         response.setContentType("text/html;charset=utf-8");
+        response.setCharacterEncoding("utf-8");
         request.setCharacterEncoding("utf-8");
         doGet(request, response);
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        //防止中文乱码的金句
+        //金句：防止中文乱码
         response.setContentType("text/html;charset=utf-8");
+        response.setCharacterEncoding("utf-8");
         request.setCharacterEncoding("utf-8");
         String action = request.getParameter("action");
         try {

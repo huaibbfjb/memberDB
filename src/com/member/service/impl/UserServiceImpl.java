@@ -36,4 +36,29 @@ public class UserServiceImpl implements UserService {
         page.setItems(items);
         return page;
     }
+    public int insert(User user) {
+        return userDao.insert(user);
+    }
+
+    public int delete(Long userId) {
+        return userDao.delete(userId);
+    }
+
+    public int update(User user) {
+        return userDao.update(user);
+    }
+
+    public List<User> queryAll() {
+        return userDao.queryAll();
+    }
+
+    public User queryUserById(Long id) {
+        return userDao.queryUserById(id);
+    }
+
+    public User login(User user) {
+        return userDao.queryUserByNameAndPassword(user);
+    }
+
+
 }

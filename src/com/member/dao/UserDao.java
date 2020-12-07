@@ -17,7 +17,7 @@ public interface UserDao {
 
     List<User> queryAll();
 
-    List<User> queryUserById(Long userId);
+    User queryUserById(Long id);
 
     /**
      * 总页数
@@ -32,4 +32,6 @@ public interface UserDao {
      * @return
      */
     List<User> queryUserByPage(int begin, int pageSize);
+
+    User queryUserByNameAndPassword(User user);
 }
